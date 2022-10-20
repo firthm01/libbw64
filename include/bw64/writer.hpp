@@ -24,7 +24,7 @@ namespace bw64 {
    *
    * This is a
    * [RAII](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
-   * class, meaning that the file will be openend and initialized (required
+   * class, meaning that the file will be opened and initialized (required
    * headers etc.) on construction, and closed and finalized (writing chunk
    * sizes etc.) on destruction.
    */
@@ -155,6 +155,9 @@ namespace bw64 {
       return false;
     }
 
+    /// @brief Use RF64 ID for outer chunk (when >4GB) rather than BW64
+    void forceRf64Id(bool state) { forceRf64Id_ = state; }
+
     void setChnaChunk(std::shared_ptr<ChnaChunk> chunk) {
       if (chunk->numUids() > 1024) {
         // TODO: make pre data chunk chna chunk a JUNK chunk and add chnaChunk
@@ -203,7 +206,8 @@ namespace bw64 {
       auto last_position = fileStream_.tellp();
       fileStream_.seekp(0);
       if (isBw64File()) {
-        utils::writeValue(fileStream_, utils::fourCC("BW64"));
+        utils::writeValue(fileStream_,
+                          utils::fourCC(forceRf64Id_ ? "RF64" : "BW64"));
         utils::writeValue(fileStream_, UINT32_MAX);
         overwriteJunkWithDs64Chunk();
       } else {
@@ -307,6 +311,7 @@ namespace bw64 {
     std::vector<std::shared_ptr<Chunk>> chunks_;
     std::vector<ChunkHeader> chunkHeaders_;
     std::vector<std::shared_ptr<Chunk>> postDataChunks_;
+    bool forceRf64Id_{false};
   };
 
 }  // namespace bw64
